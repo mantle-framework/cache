@@ -34,6 +34,7 @@ class WordPress_Repository extends Repository implements Taggable_Repository {
 	 *
 	 * @param string $key Cache key.
 	 * @param mixed  $default Default value.
+	 * @return mixed
 	 */
 	public function get( string $key, mixed $default = null ): mixed {
 		$value = \wp_cache_get( $key, $this->prefix );
@@ -63,6 +64,7 @@ class WordPress_Repository extends Repository implements Taggable_Repository {
 	 * @param  string                                    $key
 	 * @param  mixed                                     $value
 	 * @param  \DateTimeInterface|\DateInterval|int|null $ttl
+	 * @return bool
 	 */
 	public function put( $key, $value, $ttl = null ): bool {
 		return \wp_cache_set( $key, $value, $this->prefix, $ttl ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
@@ -94,6 +96,7 @@ class WordPress_Repository extends Repository implements Taggable_Repository {
 	 * Remove an item from the cache.
 	 *
 	 * @param  string $key Cache key.
+	 * @return bool
 	 */
 	public function forget( $key ): bool {
 		return \wp_cache_delete( $key, $this->prefix );
@@ -115,7 +118,7 @@ class WordPress_Repository extends Repository implements Taggable_Repository {
 	public function tags( $names ) {
 		if ( is_array( $names ) ) {
 			sort( $names );
-			$names = implode( '', $names );
+			$names = implode( $names );
 		} else {
 			$names = (string) $names;
 		}
