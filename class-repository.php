@@ -34,6 +34,7 @@ abstract class Repository {
 	 * Remove an item from the cache.
 	 *
 	 * @param  string $key Cache key.
+	 * @return bool
 	 */
 	abstract public function forget( $key ): bool;
 
@@ -43,6 +44,7 @@ abstract class Repository {
 	 * @param  string                                    $key
 	 * @param  mixed                                     $value
 	 * @param  \DateTimeInterface|\DateInterval|int|null $ttl
+	 * @return bool
 	 */
 	abstract public function put( $key, $value, $ttl = null ): bool;
 
@@ -87,6 +89,7 @@ abstract class Repository {
 	 * @param string                 $key Cache key.
 	 * @param mixed                  $value Item value.
 	 * @param null|int|\DateInterval $ttl TTL.
+	 * @return bool
 	 */
 	public function set( string $key, mixed $value, null|int|\DateInterval $ttl = null ): bool {
 		return $this->put( $key, $value, $ttl );
@@ -96,6 +99,7 @@ abstract class Repository {
 	 * Delete a cache key.
 	 *
 	 * @param string $key Cache key.
+	 * @return bool
 	 */
 	public function delete( string $key ): bool {
 		return $this->forget( $key );
@@ -106,11 +110,14 @@ abstract class Repository {
 	 *
 	 * @param iterable $keys Cache keys.
 	 * @param mixed    $default Default value.
+	 * @return iterable
 	 */
 	public function getMultiple( iterable $keys, mixed $default = null ): iterable {
 		return collect( $keys )
 			->map(
-				fn ( $key) => $this->pull( $key, $default )
+				function( $key ) use ( $default ) {
+					return $this->pull( $key, $default );
+				}
 			)
 			->to_array();
 	}
@@ -120,6 +127,7 @@ abstract class Repository {
 	 *
 	 * @param iterable               $values Key value pair of values to set.
 	 * @param null|int|\DateInterval $ttl Cache TTL.
+	 * @return bool
 	 */
 	public function setMultiple( iterable $values, null|int|\DateInterval $ttl = null ): bool {
 		foreach ( $values as $key => $value ) {
@@ -133,10 +141,13 @@ abstract class Repository {
 	 * Delete multiple cache keys.
 	 *
 	 * @param iterable<string> $keys Cache keys.
+	 * @return bool
 	 */
 	public function deleteMultiple( iterable $keys ): bool {
 		collect( $keys )->each(
-			fn ( $key) => $this->delete( $key )
+			function ( $key ) {
+				return $this->delete( $key );
+			}
 		);
 
 		return true;
@@ -146,6 +157,7 @@ abstract class Repository {
 	 * Check if a cache item exists in the store.
 	 *
 	 * @param string $key Cache key.
+	 * @return bool
 	 */
 	public function has( string $key ): bool {
 		return '__default__' !== $this->get( $key, '__default__' );

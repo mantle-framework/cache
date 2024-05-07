@@ -16,10 +16,12 @@ class Cache_Service_Provider extends Service_Provider {
 	/**
 	 * Register the service provider.
 	 */
-	public function register(): void {
+	public function register() {
 		$this->app->singleton(
 			'cache',
-			fn ( $app) => new Cache_Manager( $app )
+			function( $app ) {
+				return new Cache_Manager( $app );
+			}
 		);
 	}
 }
