@@ -10,14 +10,15 @@
 namespace Mantle\Cache;
 
 use Closure;
-use Psr\SimpleCache\CacheInterface;
+
+use function Mantle\Support\Helpers\collect;
 
 /**
  * Cache repository.
  *
  * This class contains some camelCase methods to match the PSR interface.
  */
-abstract class Repository implements CacheInterface {
+abstract class Repository {
 	/**
 	 * Retrieve a value from cache.
 	 *
@@ -30,79 +31,31 @@ abstract class Repository implements CacheInterface {
 	abstract public function get( string $key, mixed $default = null ): mixed;
 
 	/**
-	 * Retrieve multiple cache keys.
+	 * Remove an item from the cache.
 	 *
-	 * @param iterable $keys Cache keys.
-	 * @param mixed    $default Default value.
+	 * @param  string $key Cache key.
+	 * @return bool
 	 */
-	abstract public function get_multiple( iterable $keys, mixed $default = null ): iterable;
+	abstract public function forget( $key ): bool;
 
 	/**
-	 * Retrieve a value from cache. Return it if it exists and if stale, refresh it after the response is sent.
+	 * Store an item in the cache.
 	 *
-	 * @template TCacheValue
-	 *
-	 * @param string                                    $key
-	 * @param int|\DateInterval|\DateTimeInterface|null $stale
-	 * @param int|\DateInterval|\DateTimeInterface|null $expire
-	 * @param Closure(): TCacheValue                    $callback
-	 * @return (TCacheValue is null ? mixed : TCacheValue)
+	 * @param  string                                    $key
+	 * @param  mixed                                     $value
+	 * @param  \DateTimeInterface|\DateInterval|int|null $ttl
+	 * @return bool
 	 */
-	abstract public function flexible( string $key, int|\DateInterval|\DateTimeInterface|null $stale, int|\DateInterval|\DateTimeInterface|null $expire, callable $callback ): mixed;
-
-	/**
-	 * Set a cache item.
-	 *
-	 * @param string                 $key Cache key.
-	 * @param mixed                  $value Item value.
-	 * @param null|int|\DateInterval $ttl TTL.
-	 */
-	abstract public function set( string $key, mixed $value, int|\DateInterval|null $ttl = null ): bool;
-
-	/**
-	 * Set multiple keys.
-	 *
-	 * @param iterable               $values Key value pair of values to set.
-	 * @param null|int|\DateInterval $ttl Cache TTL.
-	 */
-	abstract public function set_multiple( iterable $values, null|int|\DateInterval $ttl = null ): bool;
-
-	/**
-	 * Delete a cache key.
-	 *
-	 * @param string $key Cache key.
-	 */
-	abstract public function delete( string $key ): bool;
-
-	/**
-	 * Delete multiple cache keys.
-	 *
-	 * @param iterable<string> $keys Cache keys.
-	 */
-	abstract public function delete_multiple( iterable $keys ): bool;
-
-	/**
-	 * Alias for flexible.
-	 *
-	 * @template TCacheValue
-	 *
-	 * @param string                                    $key
-	 * @param int|\DateInterval|\DateTimeInterface|null $stale
-	 * @param int|\DateInterval|\DateTimeInterface|null $expire
-	 * @param Closure(): TCacheValue                    $callback
-	 * @return (TCacheValue is null ? mixed : TCacheValue)
-	 */
-	public function swr( string $key, int|\DateInterval|\DateTimeInterface|null $stale, int|\DateInterval|\DateTimeInterface|null $expire, Closure $callback ): mixed {
-		return $this->flexible( $key, $stale, $expire, $callback );
-	}
+	abstract public function put( $key, $value, $ttl = null ): bool;
 
 	/**
 	 * Retrieve an item from the cache and delete it.
 	 *
 	 * @param  string $key
 	 * @param  mixed  $default
+	 * @return mixed
 	 */
-	public function pull( string $key, mixed $default = null ): mixed {
+	public function pull( $key, $default = null ) {
 		$value = $this->get( $key );
 
 		if ( ! is_null( $value ) ) {
@@ -115,42 +68,14 @@ abstract class Repository implements CacheInterface {
 	}
 
 	/**
-	 * Alias for get_multiple for the PSR interface.
-	 *
-	 * @param iterable $keys Cache keys.
-	 * @param mixed    $default Default value.
-	 */
-	public function getMultiple( iterable $keys, mixed $default = null ): iterable {
-		return $this->get_multiple( $keys, $default );
-	}
-
-	/**
-	 * Alias for set_multiple for the PSR interface.
-	 *
-	 * @param iterable               $values Key value pair of values to set.
-	 * @param null|int|\DateInterval $ttl Cache TTL.
-	 */
-	public function setMultiple( iterable $values, null|int|\DateInterval $ttl = null ): bool {
-		return $this->set_multiple( $values, $ttl );
-	}
-
-	/**
-	 * Alias for delete_multiple for the PSR interface.
-	 *
-	 * @param iterable<string> $keys Cache keys.
-	 */
-	public function deleteMultiple( iterable $keys ): bool {
-		return $this->delete_multiple( $keys );
-	}
-
-	/**
 	 * Store an item in the cache if the key does not exist.
 	 *
 	 * @param  string                                    $key
 	 * @param  mixed                                     $value
 	 * @param  \DateTimeInterface|\DateInterval|int|null $ttl
+	 * @return bool
 	 */
-	public function add( string $key, mixed $value, \DateTimeInterface|\DateInterval|int|null $ttl = null ): bool {
+	public function add( $key, $value, $ttl = null ) {
 		if ( is_null( $this->get( $key ) ) ) {
 			return $this->put( $key, $value, $ttl );
 		}
@@ -159,32 +84,83 @@ abstract class Repository implements CacheInterface {
 	}
 
 	/**
-	 * Alias for set.
+	 * Set a cache item.
 	 *
-	 * @param string                                    $key Cache key.
-	 * @param mixed                                     $value Item value.
-	 * @param \DateTimeInterface|\DateInterval|int|null $ttl Cache TTL.
+	 * @param string                 $key Cache key.
+	 * @param mixed                  $value Item value.
+	 * @param null|int|\DateInterval $ttl TTL.
+	 * @return bool
 	 */
-	public function put( string $key, mixed $value, \DateTimeInterface|\DateInterval|int|null $ttl = null ): bool {
-		return $this->set( $key, $value, $ttl );
+	public function set( string $key, mixed $value, null|int|\DateInterval $ttl = null ): bool {
+		return $this->put( $key, $value, $ttl );
 	}
 
 	/**
-	 * Alias for delete.
+	 * Delete a cache key.
 	 *
 	 * @param string $key Cache key.
+	 * @return bool
 	 */
-	public function forget( string $key ): bool {
-		return $this->delete( $key );
+	public function delete( string $key ): bool {
+		return $this->forget( $key );
+	}
+
+	/**
+	 * Retrieve multiple cache keys.
+	 *
+	 * @param iterable $keys Cache keys.
+	 * @param mixed    $default Default value.
+	 * @return iterable
+	 */
+	public function getMultiple( iterable $keys, mixed $default = null ): iterable {
+		return collect( $keys )
+			->map(
+				function( $key ) use ( $default ) {
+					return $this->pull( $key, $default );
+				}
+			)
+			->to_array();
+	}
+
+	/**
+	 * Set multiple keys.
+	 *
+	 * @param iterable               $values Key value pair of values to set.
+	 * @param null|int|\DateInterval $ttl Cache TTL.
+	 * @return bool
+	 */
+	public function setMultiple( iterable $values, null|int|\DateInterval $ttl = null ): bool {
+		foreach ( $values as $key => $value ) {
+			$this->set( $key, $value, $ttl );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Delete multiple cache keys.
+	 *
+	 * @param iterable<string> $keys Cache keys.
+	 * @return bool
+	 */
+	public function deleteMultiple( iterable $keys ): bool {
+		collect( $keys )->each(
+			function ( $key ) {
+				return $this->delete( $key );
+			}
+		);
+
+		return true;
 	}
 
 	/**
 	 * Check if a cache item exists in the store.
 	 *
 	 * @param string $key Cache key.
+	 * @return bool
 	 */
 	public function has( string $key ): bool {
-		return '__default__' !== $this->get( $key, '__default__' ); // @phpstan-ignore-line always evaluate
+		return '__default__' !== $this->get( $key, '__default__' );
 	}
 
 	/**
@@ -192,8 +168,9 @@ abstract class Repository implements CacheInterface {
 	 *
 	 * @param  string $key Cache key.
 	 * @param  mixed  $value Value.
+	 * @return bool
 	 */
-	public function forever( string $key, mixed $value ): bool {
+	public function forever( $key, $value ) {
 		return $this->put( $key, $value, null );
 	}
 
@@ -203,8 +180,9 @@ abstract class Repository implements CacheInterface {
 	 * @param  string                                    $key
 	 * @param  \DateTimeInterface|\DateInterval|int|null $ttl
 	 * @param  \Closure                                  $callback
+	 * @return mixed
 	 */
-	public function remember( string $key, \DateTimeInterface|\DateInterval|int|null $ttl, Closure $callback ): mixed {
+	public function remember( $key, $ttl, Closure $callback ) {
 		$value = $this->get( $key );
 
 		if ( ! is_null( $value ) ) {
@@ -219,15 +197,10 @@ abstract class Repository implements CacheInterface {
 	 *
 	 * @param  string   $key Cache key.
 	 * @param  \Closure $callback Callback to invoke.
+	 * @return mixed
 	 */
-	public function remember_forever( string $key, Closure $callback ): mixed {
-		$value = $this->get( $key );
-
-		if ( ! is_null( $value ) ) {
-			return $value;
-		}
-
-		return $this->put( $key, $callback(), null );
+	public function sear( $key, Closure $callback ) {
+		return $this->rememberForever( $key, $callback );
 	}
 
 	/**
@@ -235,8 +208,15 @@ abstract class Repository implements CacheInterface {
 	 *
 	 * @param  string   $key Cache key.
 	 * @param  \Closure $callback Callback to invoke.
+	 * @return mixed
 	 */
-	public function sear( string $key, Closure $callback ): mixed {
-		return $this->remember_forever( $key, $callback );
+	public function rememberForever( $key, Closure $callback ) {
+		$value = $this->get( $key );
+
+		if ( ! is_null( $value ) ) {
+			return $value;
+		}
+
+		return $this->put( $key, $callback(), null );
 	}
 }
