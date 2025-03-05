@@ -16,12 +16,7 @@ class Cache_Service_Provider extends Service_Provider {
 	/**
 	 * Register the service provider.
 	 */
-	public function register() {
-		$this->app->singleton(
-			'cache',
-			function( $app ) {
-				return new Cache_Manager( $app );
-			}
-		);
+	public function register(): void {
+		$this->app->singleton( 'cache', fn ( $app ) => new WordPress_Cache_Repository( $app ) );
 	}
 }
