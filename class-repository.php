@@ -7,8 +7,6 @@
  * phpcs:disable WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
  */
 
-declare(strict_types=1);
-
 namespace Mantle\Cache;
 
 use Closure;
@@ -56,19 +54,19 @@ abstract class Repository implements CacheInterface {
 	/**
 	 * Set a cache item.
 	 *
-	 * @param string                                    $key Cache key.
-	 * @param mixed                                     $value Item value.
-	 * @param int|\DateInterval|\DateTimeInterface|null $ttl TTL.
+	 * @param string                 $key Cache key.
+	 * @param mixed                  $value Item value.
+	 * @param null|int|\DateInterval $ttl TTL.
 	 */
-	abstract public function set( string $key, mixed $value, int|\DateInterval|\DateTimeInterface|null $ttl = null ): bool;
+	abstract public function set( string $key, mixed $value, int|\DateInterval|null $ttl = null ): bool;
 
 	/**
 	 * Set multiple keys.
 	 *
-	 * @param iterable<string, mixed>                   $values Key value pair of values to set.
-	 * @param int|\DateInterval|\DateTimeInterface|null $ttl Cache TTL.
+	 * @param iterable<string, mixed> $values Key value pair of values to set.
+	 * @param null|int|\DateInterval  $ttl Cache TTL.
 	 */
-	abstract public function set_multiple( iterable $values, int|\DateInterval|\DateTimeInterface|null $ttl = null ): bool;
+	abstract public function set_multiple( iterable $values, null|int|\DateInterval $ttl = null ): bool;
 
 	/**
 	 * Delete a cache key.
